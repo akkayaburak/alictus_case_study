@@ -49,6 +49,7 @@ def get_spreadsheet(service, spreadsheet_id):
 
 
 def create_and_move_spreadsheets(service, values, folder_id, drive_service):
+    '''Creates spreadsheet for each campaign and moves them to Spreadsheets folder'''
     spreadsheets = service.spreadsheets()
     for row in values[1:]:
         spreadsheet = {

@@ -45,7 +45,7 @@ def send_xlsx(service):
     file = service.files().create(body=file_metadata,
                                   media_body=media,
                                   fields='id').execute()
-    print('File ID: %s' % file.get('id'))
+    print('File sent to Drive, ID: %s' % file.get('id'))
 
 
 def create_folder(service):
@@ -75,7 +75,8 @@ def create_spreadsheet_in_folder(service, folder_id):
                                   media_body=media,
                                   fields='id').execute()
     spreadsheet_id = file.get('id')
-    print('Spreadsheet created inside folder, ID: %s' % spreadsheet_id)
+    print('Spreadsheet created inside Spreadsheets folder, ID: %s' %
+          spreadsheet_id)
     return spreadsheet_id
 
 
