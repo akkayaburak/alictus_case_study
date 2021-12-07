@@ -5,6 +5,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_drive_api import SCOPES
+from slack_api import send_to_slack
 
 # The range of a sample spreadsheet.
 
@@ -62,6 +63,8 @@ def create_and_move_spreadsheets(service, values, folder_id, drive_service):
         spreadsheet_id = spreadsheet.get('spreadsheetId')
         print('Spreadsheet created for campaign {0},  ID: {1}'.format(
             row[0], spreadsheet_id))
+        send_to_slack('Spreadsheet created for campaign {0},  ID: {1}'.format(
+            row[0], spreadsheet_id))
 
         values = [
             [
@@ -103,6 +106,8 @@ def create_and_move_spreadsheets(service, values, folder_id, drive_service):
 
         print('Spreadsheet moved to Spreadsheets folder for campaign {0},  ID: {1}'.format(
             row[0], spreadsheet_id))
+        send_to_slack('Spreadsheet moved to Spreadsheets folder for campaign {0},  ID: {1}'.format(
+            row[0], spreadsheet_id))
 
 
 def google_sheets_api(spreadsheet_id, folder_id, drive_service):
@@ -114,4 +119,5 @@ def google_sheets_api(spreadsheet_id, folder_id, drive_service):
                                      folder_id=folder_id, drive_service=drive_service)
 
     except Exception as err:
-        print(f'Error occurred: {err}')
+        print(f'Error occurred in automation: {err}')
+        send_to_slack(f'Error occurred in automation: {err}')

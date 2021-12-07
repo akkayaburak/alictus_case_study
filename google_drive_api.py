@@ -5,6 +5,7 @@ from googleapiclient.http import MediaFileUpload
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
+from slack_api import send_to_slack
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets',
@@ -46,6 +47,7 @@ def send_xlsx(service):
                                   media_body=media,
                                   fields='id').execute()
     print('File sent to Drive, ID: %s' % file.get('id'))
+    send_to_slack('File sent to Drive, ID: %s' % file.get('id'))
 
 
 def create_folder(service):
@@ -58,6 +60,7 @@ def create_folder(service):
                                   fields='id').execute()
     folder_id = file.get('id')
     print('Folder created, ID: %s' % folder_id)
+    send_to_slack('Folder created, ID: %s' % folder_id)
     return folder_id
 
 
@@ -75,7 +78,9 @@ def create_spreadsheet_in_folder(service, folder_id):
                                   media_body=media,
                                   fields='id').execute()
     spreadsheet_id = file.get('id')
-    print('Spreadsheet created inside Spreadsheets folder, ID: %s' %
+    print('Spreadsheet dataset created inside Spreadsheets folder, ID: %s' %
+          spreadsheet_id)
+    send_to_slack('Spreadsheet dataset created inside Spreadsheets folder, ID: %s' %
           spreadsheet_id)
     return spreadsheet_id
 
