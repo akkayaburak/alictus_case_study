@@ -36,7 +36,7 @@ def connect():
 
 
 def send_xlsx(service):
-    """Sends a dataset file to Google Drive."""
+    '''Sends a dataset file to Google Drive.'''
 
     # Call the Drive v3 API
     file_metadata = {'name': 'dataset.xlsx'}
@@ -49,6 +49,7 @@ def send_xlsx(service):
 
 
 def create_folder(service):
+    '''Creates a folder in Google Drive.'''
     file_metadata = {
         'name': 'Spreadsheets',
         'mimeType': 'application/vnd.google-apps.folder'
@@ -61,17 +62,21 @@ def create_folder(service):
 
 
 def create_spreadsheet_in_folder(service, folder_id):
+    '''Creates spreadsheet in determinated folder.'''
     file_metadata = {
-        'name': '.xlsx',
+        'name': 'dataset',
+        'mimeType': 'application/vnd.google-apps.spreadsheet',
         'parents': [folder_id]
     }
-    media = MediaFileUpload('',
-                            mimetype='application/vnd.ms-excel',
+    media = MediaFileUpload('dataset.xlsx',
+                            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                             resumable=True)
     file = service.files().create(body=file_metadata,
                                   media_body=media,
                                   fields='id').execute()
-    print('File created inside folder, ID: %s' % file.get('id'))
+    spreadsheet_id = file.get('id')
+    print('Spreadsheet created inside folder, ID: %s' % spreadsheet_id)
+    return spreadsheet_id
 
 
 def google_drive_api():
@@ -79,7 +84,9 @@ def google_drive_api():
         service = connect()
         send_xlsx(service=service)
         folder_id = create_folder(service=service)
-        create_spreadsheet_in_folder(service=service, folder_id=folder_id)
+        spreadsheet_id = create_spreadsheet_in_folder(
+            service=service, folder_id=folder_id)
+        return spreadsheet_id
 
     except Exception as err:
         print(f'Error occurred: {err}')
