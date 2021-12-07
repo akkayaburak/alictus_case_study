@@ -86,7 +86,7 @@ def google_drive_api():
         folder_id = create_folder(service=service)
         spreadsheet_id = create_spreadsheet_in_folder(
             service=service, folder_id=folder_id)
-        return spreadsheet_id
+        return spreadsheet_id, folder_id, service
 
     except Exception as err:
         print(f'Error occurred: {err}')

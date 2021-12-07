@@ -7,7 +7,6 @@ from google.oauth2.credentials import Credentials
 from google_drive_api import SCOPES
 
 # The range of a sample spreadsheet.
-SPREADSHEET_RANGE_NAME = 'A:F'
 
 
 def connect():
@@ -40,22 +39,78 @@ def get_spreadsheet(service, spreadsheet_id):
     # Call the Sheets API
     sheet = service.spreadsheets()
     result = sheet.values().get(spreadsheetId=spreadsheet_id,
-                                range=SPREADSHEET_RANGE_NAME).execute()
+                                range='A:F').execute()
     values = result.get('values', [])
 
     if not values:
-        print('No data found.')
-    else:
-        print('Spreadsheet found')
-        for row in values:
-            # Print columns A and E, which correspond to indices 0 and 4.
-            print('%s, %s' % (row[0], row[4]))
+        raise Exception('No data found.')
+    print('Spreadsheet found')
+    return values
 
 
-def google_sheets_api(spreadsheet_id):
+def create_and_move_spreadsheets(service, values, folder_id, drive_service):
+    spreadsheets = service.spreadsheets()
+    for row in values[1:]:
+        spreadsheet = {
+            'properties': {
+                'title': row[0],
+            }
+        }
+
+        spreadsheet = spreadsheets.create(body=spreadsheet).execute()
+        spreadsheet_id = spreadsheet.get('spreadsheetId')
+        print('Spreadsheet created for campaign {0},  ID: {1}'.format(
+            row[0], spreadsheet_id))
+
+        values = [
+            [
+                'Campaign name',
+                'Total Impression',
+                'Total Clicks',
+                'CTR (%)',
+                'CPC',
+                'Total App Install',
+                'Total Budget',
+
+            ],
+            [
+                row[0],
+                row[1],
+                row[2],
+                row[3],
+                row[3],
+                row[4],
+                float(row[2]) * float(row[3])
+            ]
+        ]
+        data = [
+            {
+                'range': 'A:G',
+                'values': values
+            },
+        ]
+        body = {
+            'data': data,
+            'valueInputOption': 'RAW'
+        }
+
+        spreadsheets.values().batchUpdate(
+            spreadsheetId=spreadsheet_id, body=body).execute()
+
+        drive_service.files().update(fileId=spreadsheet_id,
+                                     addParents=folder_id, removeParents='root').execute()
+
+        print('Spreadsheet moved to Spreadsheets folder for campaign {0},  ID: {1}'.format(
+            row[0], spreadsheet_id))
+
+
+def google_sheets_api(spreadsheet_id, folder_id, drive_service):
     try:
         service = connect()
-        get_spreadsheet(service=service, spreadsheet_id=spreadsheet_id)
+        spreadsheet = get_spreadsheet(
+            service=service, spreadsheet_id=spreadsheet_id)
+        create_and_move_spreadsheets(service=service, values=spreadsheet,
+                                     folder_id=folder_id, drive_service=drive_service)
 
     except Exception as err:
         print(f'Error occurred: {err}')
