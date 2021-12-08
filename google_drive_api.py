@@ -1,11 +1,14 @@
 from __future__ import print_function
 import os.path
 from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload
+from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from slack_api import send_to_slack
+import io
+import pandas as pd
+import os
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets',
@@ -81,8 +84,35 @@ def create_spreadsheet_in_folder(service, folder_id):
     print('Spreadsheet dataset created inside Spreadsheets folder, ID: %s' %
           spreadsheet_id)
     send_to_slack('Spreadsheet dataset created inside Spreadsheets folder, ID: %s' %
-          spreadsheet_id)
+                  spreadsheet_id)
     return spreadsheet_id
+
+
+def search_file(service, file_name):
+    response = service.files().list(q="mimeType!='application/vnd.google-apps.folder'",
+                                    spaces='drive',
+                                    fields='files(id, name)').execute()
+    for file in response.get('files', []):
+        # Process change
+        print('Found file: %s (%s)' % (file.get('name'), file.get('id')))
+        if file.get('name') == file_name:
+            return file.get('id')
+    raise Exception('File not found')
+
+
+def calculate_budget(service, file_id):
+    request = service.files().export_media(fileId=file_id,
+                                           mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    fh = io.FileIO(file_id + '.xlsx', 'wb')
+    downloader = MediaIoBaseDownload(fh, request)
+    done = False
+    while done is False:
+        done = downloader.next_chunk()
+    df = pd.read_excel(file_id + ".xlsx", sheet_name=None,
+                       index_col=None, usecols="G")
+    budget = float(df['Sayfa1']['Total Budget'])
+    #os.remove(file_id + ".xlsx")
+    return budget
 
 
 def google_drive_api():
